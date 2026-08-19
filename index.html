@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>New York Sports Fandom Map</title>
+<title>The Empire State Sports Fan Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -374,7 +374,7 @@
   <div class="top-panel">
     <header>
       <div class="header-titles">
-        <h1>New York Sports Fandom Map</h1>
+        <h1>The Empire State Sports Fan Map</h1>
         <div class="tabs" id="tabs">
           <button class="tab active" data-league="NFL">NFL</button>
           <button class="tab" data-league="NBA">NBA</button>
@@ -382,7 +382,7 @@
           <button class="tab" data-league="NHL">NHL</button>
         </div>
         <a class="form-link" href="https://forms.gle/AZuSEtA5LhPoBS5v6" target="_blank" rel="noopener noreferrer">
-          Add your team
+          Fill out the form
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
         </a>
       </div>
@@ -431,11 +431,11 @@ function renderUnderrepresented() {
   withCounts.sort((a, b) => a.count - b.count || a.name.localeCompare(b.name));
 
   const zeroCount = withCounts.filter(c => c.count === 0).length;
-  const shortlist = withCounts.slice(0, 10);
+  const shortlist = withCounts; // show all 62 counties, ranked lowest-coverage first (scrollable)
 
   const lead = zeroCount > 0
-    ? `${zeroCount} of 62 counties have zero responses so far. Lowest-coverage counties:`
-    : `Every county has at least one response. Lowest-coverage counties:`;
+    ? `${zeroCount} of 62 counties have zero responses so far. All counties, lowest coverage first:`
+    : `Every county has at least one response. All counties, lowest coverage first:`;
 
   const rows = shortlist.map(c => `
     <div class="underrep-row ${c.count === 0 ? "zero" : ""}" data-county="${c.name}">
