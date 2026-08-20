@@ -600,6 +600,31 @@ function setupSearch({ inputId, dropdownId, options, onSelect }) {
 
 let cityMarker = null;
 
+/* ---------- Deep linking: read/write ?league=&county=&city= in the URL ---------- */
+function getURLParams() {
+  return new URLSearchParams(window.location.search);
+}
+function updateURLParams(updates) {
+  const params = getURLParams();
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === null || value === undefined) {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+  }
+  const newSearch = params.toString();
+  const newURL = window.location.pathname + (newSearch ? `?${newSearch}` : "") + window.location.hash;
+  window.history.replaceState({}, "", newURL);
+}
+/* Case-insensitive match against a list of valid names, since a hand-typed
+   or hand-edited URL might not match capitalization exactly. */
+function findMatchingName(rawValue, validNames) {
+  if (!rawValue) return null;
+  const target = rawValue.trim().toLowerCase();
+  return validNames.find(n => n.toLowerCase() === target) || null;
+}
+
 function selectSearchedCounty(name) {
   const layer = COUNTY_LAYERS[name];
   if (!layer) return;
@@ -619,6 +644,10 @@ function selectSearchedCounty(name) {
   layer.bringToFront();
   pinnedLayer = layer;
   pinnedCounty = name;
+
+  updateURLParams({ county: name, city: null });
+  const countyInput = document.getElementById("county-search");
+  if (countyInput) countyInput.value = name;
 }
 
 function selectSearchedCity(name) {
@@ -645,6 +674,10 @@ function selectSearchedCity(name) {
 
   map.flyTo(coords, 10.5);
   cityMarker.openTooltip();
+
+  updateURLParams({ city: name, county: null });
+  const cityInput = document.getElementById("city-search");
+  if (cityInput) cityInput.value = name;
 }
 
 /* ---------- City coordinates (for the city search dot) ---------- */
@@ -846,6 +879,11 @@ L.control.attribution({ position: "bottomright" }).addAttribution(
 map.on("click", () => {
   unpinCounty(); // tapping open water / outside NY closes the pinned tooltip
   if (cityMarker) { map.removeLayer(cityMarker); cityMarker = null; }
+  updateURLParams({ county: null, city: null });
+  const countyInput = document.getElementById("county-search");
+  const cityInput = document.getElementById("city-search");
+  if (countyInput) countyInput.value = "";
+  if (cityInput) cityInput.value = "";
 });
 
 /* ---------- Styling logic ---------- */
@@ -1009,6 +1047,7 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   btn.classList.add("active");
   activeLeague = btn.dataset.league;
   renderMap();
+  updateURLParams({ league: activeLeague });
 });
 
 /* ---------- Load baked-in CSV on startup ---------- */
@@ -1061,6 +1100,28 @@ document.getElementById("tabs").addEventListener("click", (e) => {
     options: Object.keys(cityTotals).filter(name => CITY_COORDS[name]).sort(),
     onSelect: selectSearchedCity
   });
+
+  // Deep linking: apply ?league=&county=&city= from the URL, if present and valid.
+  // Lets a shared link (e.g. from a subreddit post) open directly on a specific
+  // county or city instead of the default statewide view.
+  const urlParams = getURLParams();
+  const urlLeague = urlParams.get("league");
+  if (urlLeague && LEAGUE_COLUMNS[urlLeague.toUpperCase()]) {
+    const league = urlLeague.toUpperCase();
+    activeLeague = league;
+    document.querySelectorAll(".tab").forEach(t => {
+      t.classList.toggle("active", t.dataset.league === league);
+    });
+    renderMap();
+  }
+
+  const urlCounty = findMatchingName(urlParams.get("county"), Object.keys(COUNTY_TOTALS));
+  const urlCity = findMatchingName(urlParams.get("city"), Object.keys(cityTotals).filter(n => CITY_COORDS[n]));
+  if (urlCounty) {
+    selectSearchedCounty(urlCounty);
+  } else if (urlCity) {
+    selectSearchedCity(urlCity);
+  }
 })();
 </script>
 </body>
